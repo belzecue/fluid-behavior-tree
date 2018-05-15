@@ -6,6 +6,12 @@ using Adnc.FluidBT.Tasks;
 namespace Adnc.FluidBT.Trees {
     public class BehaviorTree {
         private bool _setup;
+        private bool _complete;
+
+        /// <summary>
+        /// Restart the tree on the next frame after it has completed
+        /// </summary>
+        public bool repeat;
 
         public TaskRoot Root { get; } = new TaskRoot();
 
@@ -61,7 +67,9 @@ namespace Adnc.FluidBT.Trees {
         }
 
         public void Update () {
-            Current.Update();
+            if (!_complete && Current.Update() != TaskStatus.Continue && !repeat) {
+                _complete = true;
+            }
         }
     }
 }

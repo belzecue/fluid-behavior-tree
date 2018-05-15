@@ -14,6 +14,10 @@ namespace Adnc.FluidBT.Tasks {
         public BehaviorTree Owner { get; set; }
 
         public TaskStatus Update () {
+            if (Owner != null) {
+                Owner.Current = this;
+            }
+
             if (!_init) {
                 Init();
                 _init = true;

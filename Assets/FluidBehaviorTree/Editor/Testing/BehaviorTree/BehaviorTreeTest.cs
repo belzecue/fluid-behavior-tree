@@ -1,5 +1,6 @@
 ﻿using System;
 using Adnc.FluidBT.Tasks;
+using Adnc.FluidBT.Tasks.Actions;
 using Adnc.FluidBT.Trees;
 using NSubstitute;
 using NUnit.Framework;
@@ -66,6 +67,8 @@ namespace Adnc.FluidBT.Testing {
                 [SetUp]
                 public void AddNode () {
                     tree.AddNode(tree.Root, action);
+
+                    Assert.AreEqual(tree.Root.children[0], action);
                 }
 
                 [Test]
@@ -106,46 +109,94 @@ namespace Adnc.FluidBT.Testing {
             }
         }
 
-        public class TickMethod : BehaviorTreeTests {
-            private ITask action;
+        public class TickMethod {
+            public class WithSingleChild : BehaviorTreeTests {
+                [Test]
+                public void Update_the_first_child_task_on_update () {
+                    var action = A.TaskStub().Build();
+                    tree.AddNode(tree.Root, action);
 
-            [SetUp]
-            public void SetDefaultAction () {
-                action = A.TaskStub().Build();
+                    tree.Update();
 
-                tree.Root.AddChild(action);
+                    action.Received(1).Update();
+                }
+
+                [Test]
+                public void Update_the_first_child_task_on_update_multiple_times_if_continue_status () {
+                    var action = A.TaskStub().WithUpdateStatus(TaskStatus.Continue).Build();
+                    tree.AddNode(tree.Root, action);
+
+                    tree.Update();
+                    tree.Update();
+
+                    action.Received(2).Update();
+                }
+
+                [Test]
+                public void Stops_ticking_after_tree_is_finished () {
+                    var action = A.TaskStub().Build();
+                    tree.AddNode(tree.Root, action);
+
+                    tree.Update();
+                    tree.Update();
+
+                    action.Received(1).Update();
+                }
+
+                [Test]
+                public void Continues_ticking_after_tree_is_finished_if_repeat_is_true () {
+                    var action = A.TaskStub().Build();
+                    tree.repeat = true;
+                    tree.AddNode(tree.Root, action);
+
+                    tree.Update();
+                    tree.Update();
+
+                    action.Received(2).Update();
+                }
+
+                public void Does_not_call_reset_when_tree_is_finished () {
+                }
+
+                public void Calls_reset_when_tree_is_finished_if_repeat_is_true () {
+                }
+
+                public void Only_calls_reset_when_reset_has_been_called () {
+                    // Still need to call reset when a conditional abort triggers
+                }
+
+                public class GenericAction : BehaviorTreeTests {
+                    private ITask RunAction (TaskStatus status) {
+                        var action = new ActionGeneric { updateLogic = () => status };
+                        tree.AddNode(tree.Root, action);
+                        tree.Update();
+
+                        return action;
+                    }
+
+                    [Test]
+                    public void Update_sets_action_as_current_on_action_status_success () {
+                        Assert.AreEqual(RunAction(TaskStatus.Success), tree.Current);
+                    }
+
+                    [Test]
+                    public void Update_sets_action_as_current_on_status_failure () {
+                        Assert.AreEqual(RunAction(TaskStatus.Failure), tree.Current);
+                    }
+
+                    [Test]
+                    public void Update_sets_action_as_current_on_status_continue () {
+                        Assert.AreEqual(RunAction(TaskStatus.Continue), tree.Current);
+                    }
+                }
             }
 
-            [Test]
-            public void Update_the_first_child_task_on_update () {
-                tree.Update();
+            public class WithSequence : TickMethod {
+                public void Ticks_where_a_continue_left_off_from () {
+                }
 
-                action.Received().Update();
-            }
-
-            [Test]
-            public void Update_sets_root_as_current_on_action_status_success () {
-                tree.Update();
-
-                Assert.AreEqual(tree.Current, tree.Root);
-            }
-
-            [Test]
-            public void Update_sets_root_as_current_on_status_failure () {
-                action.Update().Returns(TaskStatus.Failure);
-
-                tree.Update();
-
-                Assert.AreEqual(tree.Current, tree.Root);
-            }
-
-            [Test]
-            public void Update_sets_root_as_current_on_status_continue () {
-                action.Update().Returns(TaskStatus.Continue);
-
-                tree.Update();
-
-                Assert.AreEqual(tree.Current, tree.Root);
+                public void Does_not_continue_ticking_if_tree_is_exhausted () {
+                }
             }
         }
     }
