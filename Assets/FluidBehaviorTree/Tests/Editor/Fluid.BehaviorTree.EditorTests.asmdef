@@ -1,0 +1,19 @@
+{
+    "name": "Fluid.BehaviorTree.EditorTests",
+    "references": [
+        "Fluid.BehaviorTree",
+        "Fluid.BehaviorTree.Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}
